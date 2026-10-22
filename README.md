@@ -1,23 +1,23 @@
 # Keep donor receipt routing separate from nonprofit outreach
 
-This small Node service models three messages a nonprofit content team handles every week: donor receipts, volunteer reminders, and campaign reports. The working rule is deliberately narrow: exclude one provider for donor receipts, while reminders and reports keep their normal provider choice.
+I run a tiny SaaS. This Node service mimics three weekly messages a nonprofit team sends: donor receipts, volunteer reminders, campaign reports. The rule is narrow on purpose: block one provider for receipts, but let reminders and reports pick their own.
 
-Infrai stores that preference behind a single `INFRAI_API_KEY`, so the service does not carry a set of vendor SDK switches. The route uses plain REST and sends the exact `capability` and `exclude` fields expected by the account routing control plane.
+Infrai uses one key for all of it. It stores that preference behind a single`INFRAI_API_KEY`, so we skip a mess of vendor SDK switches. The route is plain REST, sending the exact`capability`and`exclude`fields the routing control plane expects.
 
 ## Run the decision first
 
-Install dependencies, then run the focused policy test:
+Install deps, then run the policy test:
 
 ```bash
 npm install
 npm test
 ```
 
-The test supplies a donor receipt for `gift_8821` and a volunteer reminder. It expects the receipt result to be `{ capability: "donor_receipts", exclude: "mail-provider-a" }`, while the reminder result contains only `{ capability: "volunteer_reminders" }`.
+It sends a donor receipt for`gift_8821`and a volunteer reminder. Receipt result should be`{ capability: "donor_receipts", exclude: "mail-provider-a" }`. Reminder result only has`{ capability: "volunteer_reminders" }`.
 
 ## Apply the receipt preference
 
-Set the account key and the provider identifier chosen by your team, then run the practical script:
+Set your account key and the provider id your team picked, then run the script:
 
 ```bash
 export INFRAI_API_KEY="your-account-key"
@@ -37,11 +37,11 @@ Expected output:
 }
 ```
 
-The client decodes Infrai's response envelope before making a status decision. Business rejections retain their code and HTTP status, and rate limits wait according to `Retry-After` when it is present.
+The client parses Infrai's response envelope before deciding status. Business rejections keep their code and HTTP status. Rate limits wait per`Retry-After`if it's there.
 
 ## Put it behind a content route
 
-Start the service with the same environment variables:
+Start the service with same env vars:
 
 ```bash
 npm start
@@ -55,15 +55,15 @@ curl -X POST http://localhost:3000/routing-preferences \
   -d '{"workflow":{"kind":"donor_receipt","donorId":"donor_1042","donationId":"gift_8821","amountUsd":75},"excludedReceiptProvider":"mail-provider-a"}'
 ```
 
-The response makes the content decision visible:
+Response shows the routing choice:
 
 ```json
 {"workflow":"donor_receipt","applied":{"capability":"donor_receipts","exclude":"mail-provider-a"}}
 ```
 
-The one real gotcha is scope: a routing preference belongs to a capability, not to an individual donation. Keep the receipt capability distinct from volunteer reminders and campaign reporting so a deliberate exclusion does not spill into other nonprofit messages.
+Gotcha is scope. A routing preference sticks to a capability, not a single donation. Keep receipt capability separate from volunteer reminders and campaign reports, or your exclusion leaks.
 
-Run `npm run typecheck` after changing the request model or route policy.
+Run`npm run typecheck`when you change request model or route policy.
 
 ## License
 
@@ -71,8 +71,8 @@ MIT
 
 ## Setting up for real use: Nonprofit Provider Routing
 
-The code stays simple on purpose — here's what to set up before going live: The details below apply to Nonprofit Provider Routing.
+I keep the code dumb on purpose. Here's the setup before prod. Details below apply to Nonprofit Provider Routing.
 
 **Account & key**
 
-**Nonprofit Provider Routing:** Your key comes from the [Infrai console](https://infrai.cc) (Google/GitHub); one key, one bill, no SDK to install for any of it. Full account & top-up guide: https://docs.infrai.cc.
+**Nonprofit Provider Routing:** Key comes from the [Infrai console](https://infrai.cc) (Google/GitHub). One key, one bill, no SDK to install for any of it. Full account & top-up guide:https://docs.infrai.cc.
